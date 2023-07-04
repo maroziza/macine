@@ -61,6 +61,7 @@ __S/RAM__ Selects mode of operation, denoted by source, either RAM or ALU.
 | outc[AHBLDX] | out=const &#124; al?; s preserved  | [3]=dx &#124; RAM[ AH/BH : VAL] |
 | outd[AHBLAL] | out= sx ^ dx ~~^ sx=&#124; const~~ | [7]=dx &#124; RAM[ AH/BH : VAL] |
 | ram          | RAM[ AH/BH : VAL] = sx ^ dx        | RAM[ AH/BH : VAL] = 0           |
+
 TODO zero test, bind to ah or dx?
 
 ### Register
@@ -82,9 +83,22 @@ RAM mode destination only 7=video
 * 6 = SPI data
 * 7 = video
 
+## Timing
+
+CD4040 is main clock source. it is divided in two parts, 9 bit as code counter 
+that can be only reset, and 4-stage timing generator.
+1. address ready
+2. instruction
+3. bus ready, ram address ready
+4. write
+
+Secondary clock source is based on crystal 32.768 kHz, if interrupts enabled, 
+PC (CH CF CL) will be reset 32768 times per second
+
 ## Code Time!
 
 32 bit addition macro
+
 ```
 (times -4 (asm
     ! al= [ $ ]
@@ -93,3 +107,20 @@ RAM mode destination only 7=video
     ![ $ ]= s
 ))
 ```
+
+## Bill of material
+
+| name     | count | package | description                  | usage                                 |
+|----------|-------|---------|------------------------------|---------------------------------------|
+| 74HC541  | 1     |         | tri-state buffer/line driver | BUS= xor OR ram                       |
+| 74HC4040 | 1     | DIP-16  | 12 bit counter               | CL, cycle driver                      |
+| 74HC574  | 7     | DIP-20  | octal d-flip flop            | AH, BH, AL, BL, SX, DX, CH            |
+| 74HC283  | 2     | DIP-16  | 4 bit adder with carry       | BL + or                               |
+| 74HC86   | 2     | DIP-14  | 4 bit XOR                    | dx XOR sx                             |
+| 74       | 1     |         | 3-to-8 demultipexer          | destination/instruction decoder       |
+| 74       | 1     |         | 2-to-4 dual DMX              | cycle decoder, special output decoder | 
+| 74       | 1     |         | dual  d-flip flop            | CF, NMI                               |
+| 32       | 2     |         | 8 megabit PROM               | Code storage                          |
+| 32       | 1     |         | 1 megabit static ram         | Main ram                              |
+1
+trying to fit 20 ICs to compete in [MyNOR](http://mynor.org/) challenge 

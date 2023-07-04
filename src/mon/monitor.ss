@@ -52,4 +52,10 @@
     ! chcl= s
     ))
 
-
+(define (font-to-char)
+(define (produce-verses font row result)
+  (if (nil? font)
+    result
+    (produce-verses (cdr font) (+ 1 row)
+      (cons (font-to-char (car font) row) result)))
+  )
