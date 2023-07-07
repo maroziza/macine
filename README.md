@@ -24,14 +24,15 @@ bytes challenges and sector soft. Goal is to bootstrap this system at maximum sc
 
 ## Structure
 
-Instruction pointer combined from 3 registers, 18 bit total
+Instruction pointer combined from 3 registers, 18 bit total, granting 256k instructions to execute. 
+512Kb is maximum single program. 
 
 |          CH           |         CF          |              CL               |
 |:---------------------:|:-------------------:|:-----------------------------:|
-|           8           |         1           |               9               |
-| code page (code high) |     carry/flag      |   code counter (code low)     |
+|           8           |          1          |               9               |
+| code page (code high) |     carry/flag      |    code counter (code low)    |
 |  can be __set__ only  | can be __set__ only | can be __reset__ to zero only |
-|                       |                     |            CD4040             |
+|        74HC574        |       74HC74        |           74HC4040            |
 
 ![scheme](logisim/rev1.png)
 
@@ -57,10 +58,10 @@ __S/RAM__ Selects mode of operation, denoted by source, either RAM or ALU.
 | dst          | s                                  | ram                             |
 |--------------|------------------------------------|---------------------------------|
 | AH/AL/BL/DX  | DX ^ (s = ( AH & VAL))             | DX &#124; RAM[ AH/BH : VAL]     |
-| pc           | if dx; cf=carry; s = ( AH & VAL))  | DX=SX &#124; RAM[ AH/BH : VAL]  |
+| ram          | RAM[ AH/BH : VAL] = sx ^ dx        | RAM[ AH/BH : VAL] = 0           |
 | outc[AHBLDX] | out=const &#124; al?; s preserved  | [3]=dx &#124; RAM[ AH/BH : VAL] |
 | outd[AHBLAL] | out= sx ^ dx ~~^ sx=&#124; const~~ | [7]=dx &#124; RAM[ AH/BH : VAL] |
-| ram          | RAM[ AH/BH : VAL] = sx ^ dx        | RAM[ AH/BH : VAL] = 0           |
+| sxdx         | if dx:2 cf=carry; s = ( AH & VAL)) | DX=SX &#124; RAM[ AH/BH : VAL]  |
 
 TODO zero test, bind to ah or dx?
 
@@ -112,15 +113,18 @@ PC (CH CF CL) will be reset 32768 times per second
 
 | name     | count | package | description                  | usage                                 |
 |----------|-------|---------|------------------------------|---------------------------------------|
-| 74HC541  | 1     |         | tri-state buffer/line driver | BUS= xor OR ram                       |
+| 74HC541  | 1     | DIP-20  | tri-state buffer/line driver | BUS= xor OR ram                       |
 | 74HC4040 | 1     | DIP-16  | 12 bit counter               | CL, cycle driver                      |
 | 74HC574  | 7     | DIP-20  | octal d-flip flop            | AH, BH, AL, BL, SX, DX, CH            |
 | 74HC283  | 2     | DIP-16  | 4 bit adder with carry       | BL + or                               |
 | 74HC86   | 2     | DIP-14  | 4 bit XOR                    | dx XOR sx                             |
-| 74       | 1     |         | 3-to-8 demultipexer          | destination/instruction decoder       |
-| 74       | 1     |         | 2-to-4 dual DMX              | cycle decoder, special output decoder | 
-| 74       | 1     |         | dual  d-flip flop            | CF, NMI                               |
-| 32       | 2     |         | 8 megabit PROM               | Code storage                          |
+| 74HC138  | 1     | DIP-16  | 3-to-8 demultipexer          | destination/instruction decoder       |
+| 74HC139  | 1     | DIP-16  | 2-to-4 dual DMX              | cycle decoder, special output decoder | 
+| 74HC74   | 1     | DIP-14  | dual  d-flip flop            | CF, NMI                               |
+| 27c800   | 2     |         | 8 megabit PROM               | Code storage                          |
 | 32       | 1     |         | 1 megabit static ram         | Main ram                              |
-1
+
+
+
+
 trying to fit 20 ICs to compete in [MyNOR](http://mynor.org/) challenge 
